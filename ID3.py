@@ -97,6 +97,8 @@ class FeatureNode(BaseNode):
                 pass
             if not level_count:
                 ret = ''.join([ret, " ".join(cur_level), "\n", " ".join(cur_edges), "\n"])
+                # ret = ''.join([ret, " ".join(cur_level), "\n"])
+                # ret = ''.join([ret, " ".join(cur_edges), "\n"])
                 level_count = next_level_count
                 next_level_count = 0
                 cur_level = []
