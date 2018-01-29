@@ -77,7 +77,7 @@ class FeatureNode(BaseNode):
     def traverse(self, instance):
         try:
             return self._edges[instance[self._feature]].traverse(instance)
-        except KeyError: # Happens when instance doesn't have _feature as a feature.
+        except KeyError: # Happens when _edges doesn't have instance[self._feature] as an edge.
             return self._default
 
     # Pretty crappy implementation. Just quick and dirty level order traverse with a queue.
