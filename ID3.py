@@ -50,10 +50,12 @@ class BaseNode(ABC):
 
     @abstractmethod
     def get_data(self):
+        """Returns the main data info in the node."""
         pass
 
     @abstractmethod
     def traverse(self, instance):
+        """Traverses the node."""
         pass
 
 
@@ -61,28 +63,39 @@ class FeatureNode(BaseNode):
     """A feature in the decision tree."""
 
     def __init__(self, feature):
+        """
+        _feature is the feature this FeatureNode represents.
+        _edges is a dictionary mapping values of _feature to other BaseNodes.
+        _default is the default value returned if the FeatureNode doesn't contain a certain value as an edge.
+        """
         self._feature = feature
         self._edges = {}
         self._default = None
 
     def set_default(self, val):
+        """Setter method that sets _default."""
         self._default = val
 
     def add_edge(self, val, node):
+        """Adds an edge from val to node in _edges."""
         self._edges[val] = node
 
     def get_data(self):
+        """Getter method that gets _feature."""
         return self._feature
 
     def traverse(self, instance):
+        """Traverses the FeatureNode."""
         try:
             return self._edges[instance[self._feature]].traverse(instance)
         except KeyError:  # Happens when _edges doesn't have instance[self._feature] as an edge.
             return self._default
 
-    # Pretty crappy implementation. Just quick and dirty level order traverse with a queue.
-    # This should be refactored but probably won't be.
     def __repr__(self):
+        """
+        Pretty crappy implementation. Just quick and dirty level order traverse with a queue.
+        This should be refactored but probably won't be.
+        """
         ret = ""
         queue = [self]
         cur_level = []
@@ -113,13 +126,17 @@ class LabelNode(BaseNode):
     """A label in the decision tree."""
 
     def __init__(self, label):
+        """_label is the label this LabelNode represents."""
         self._label = label
 
     def get_data(self):
+        """Getter method that gets _label."""
         return self._label
 
     def traverse(self, instance):
+        """Since LabelNodes are leaf nodes, they represent the final classification. Hence, just returns _label."""
         return self._label
 
     def __repr__(self):
+        """Since LabelNodes are leaf nodes, they represent the final classification. Hence, just returns _label."""
         return self._label
