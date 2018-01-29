@@ -77,7 +77,7 @@ class FeatureNode(BaseNode):
     def traverse(self, instance):
         try:
             return self._edges[instance[self._feature]].traverse(instance)
-        except KeyError: # Happens when _edges doesn't have instance[self._feature] as an edge.
+        except KeyError:  # Happens when _edges doesn't have instance[self._feature] as an edge.
             return self._default
 
     # Pretty crappy implementation. Just quick and dirty level order traverse with a queue.
@@ -98,7 +98,7 @@ class FeatureNode(BaseNode):
                     queue.append(branch)
                     cur_edges.append("({}, {})".format(val, branch.get_data()))
                     next_level_count += 1
-            except:
+            except AttributeError:
                 pass
             if not level_count:
                 ret = ''.join([ret, " ".join(map(str, cur_level)), "\n", " ".join(map(str, cur_edges)), "\n"])
