@@ -12,12 +12,10 @@ def id3(examples):
     else:
         best_feature = _get_best_feature(examples)
         node = FeatureNode(best_feature)
+        node.set_default(examples.iloc[:, examples.shape[1] - 1].mode()[0])
         for val in examples[best_feature].unique():
             branch_examples = examples[examples[best_feature] == val].drop(best_feature, axis=1)
-            if branch_examples.empty: # Will never happen in the current implementation
-                node.add_edge(val, LabelNode(examples.iloc[:, examples.shape[1] - 1].mode()[0]))
-            else:
-                node.add_edge(val, id3(branch_examples))
+            node.add_edge(val, id3(branch_examples))
         return node
 
 
@@ -65,6 +63,10 @@ class FeatureNode(BaseNode):
     def __init__(self, feature):
         self._feature = feature
         self._edges = {}
+        self._default = None
+
+    def set_default(self, val):
+        self._default = val
 
     def add_edge(self, val, node):
         self._edges[val] = node
@@ -73,7 +75,10 @@ class FeatureNode(BaseNode):
         return self._feature
 
     def traverse(self, instance):
-        return self._edges[instance[self._feature]].traverse(instance)
+        try:
+            return self._edges[instance[self._feature]].traverse(instance)
+        except KeyError: # Happens when instance doesn't have _feature as a feature.
+            return self._default
 
     # Pretty crappy implementation. Just quick and dirty level order traverse with a queue.
     # This should be refactored but probably won't be.
