@@ -4,20 +4,18 @@ from abc import ABC, abstractmethod
 
 def id3(examples):
     """Creates a decision tree using the ID3 algorithm."""
-    classifications = examples['Play?']
-    if classifications.str.contains('Yes').all():
-        return LabelNode('Yes')
-    elif classifications.str.contains('No').all():
-        return LabelNode('No')
-    elif len(examples.columns) <= 1:
-        return LabelNode(classifications.value_counts().index[0])
+    labels = examples.iloc[:, examples.shape[1] - 1]
+    if examples.shape[1] == 1:
+        return LabelNode(labels.value_counts().index[0])
+    elif len(labels.unique()) == 1:
+        return LabelNode(labels.iloc[0])
     else:
         best_feature = _get_best_feature(examples)
         node = FeatureNode(best_feature)
         for val in examples[best_feature].unique():
             branch_examples = examples[examples[best_feature] == val].drop(best_feature, axis=1)
             if branch_examples.empty: # Will never happen in the current implementation
-                node.add_edge(val, LabelNode(examples['Play?'].mode()[0]))
+                node.add_edge(val, LabelNode(examples.iloc[:, examples.shape[1] - 1].mode()[0]))
             else:
                 node.add_edge(val, id3(branch_examples))
         return node
@@ -25,21 +23,17 @@ def id3(examples):
 
 # Returns the feature that results in the greatest information gain from a dataframe of examples.
 def _get_best_feature(examples):
-    cur_entropy = _calc_entropy(examples['Play?'].value_counts())
-    best_feature = ('', 0)
-    for feature in examples.columns.values:
-        if feature == 'Play?':
-            continue
-        information_gain = _calc_information_gain(examples, cur_entropy, feature)
-        if information_gain > best_feature[1]:
-            best_feature = (feature, information_gain)
-    return best_feature[0]
+    cur_entropy = _calc_entropy(examples.iloc[:, examples.shape[1] - 1].value_counts())
+    features = list(examples)[:examples.shape[1] - 1]  # Cuts off the last feature (the label).
+    features = list(map(lambda feature: (feature, _calc_information_gain(examples, cur_entropy, feature)), features))
+    return max(features, key=lambda feature: feature[1])[0]
 
 
 # Calculates information gain if a dataframe of examples were split on a specific col.
 def _calc_information_gain(examples, entropy, col):
     for val in examples[col].unique():
-        classification_counts = examples.loc[examples[col] == val, 'Play?'].value_counts()
+        # Gets the value_counts() of the label of the rows with val in col.
+        classification_counts = examples.loc[examples[col] == val, list(examples)[examples.shape[1] - 1]].value_counts()
         entropy -= sum(classification_counts) / len(examples) * _calc_entropy(classification_counts)
     return entropy
 
@@ -80,7 +74,6 @@ class FeatureNode(BaseNode):
 
     def traverse(self, instance):
         return self._edges[instance[self._feature]].traverse(instance)
-
 
     # Pretty crappy implementation. Just quick and dirty level order traverse with a queue.
     # This should be refactored but probably won't be.
