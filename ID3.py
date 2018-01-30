@@ -58,6 +58,11 @@ class BaseNode(ABC):
         """Traverses the node."""
         pass
 
+    @abstractmethod
+    def get_children(self):
+        """Returns a list of the node's children."""
+        pass
+
 
 class FeatureNode(BaseNode):
     """A feature in the decision tree."""
@@ -66,11 +71,14 @@ class FeatureNode(BaseNode):
         """
         _feature is the feature this FeatureNode represents.
         _edges is a dictionary mapping values of _feature to other BaseNodes.
-        _default is the default value returned if the FeatureNode doesn't contain a certain value as an edge.
+        _default is the majority label at this FeatureNode.
+        _default is used if the FeatureNode doesn't contain a certain value as an edge or during reduced error pruning.
+        _marked determines if a FeatureNode is being considered for pruning.
         """
         self._feature = feature
         self._edges = {}
         self._default = None
+        self._marked = False
 
     def set_default(self, val):
         """Setter method that sets _default."""
@@ -80,22 +88,46 @@ class FeatureNode(BaseNode):
         """Adds an edge from val to node in _edges."""
         self._edges[val] = node
 
+    def prune_node(self, old_node):
+        """Prune a FeatureNode by turning it into a LabelNode with the _default as the label."""
+        self._edges = {val:LabelNode(old_node.get_default()) for val, node in self._edges.items()}
+        # for val, node in self._edges.items():
+        #     if node is old_node:
+        #         self._edges[val] = LabelNode(old_node.get_default())
+
     def get_data(self):
         """Getter method that gets _feature."""
         return self._feature
 
+    def get_default(self):
+        """Getter method that gets _default."""
+        return self._default
+
     def traverse(self, instance):
         """Traverses the FeatureNode."""
         try:
-            return self._edges[instance[self._feature]].traverse(instance)
+            return self._default if self._marked else self._edges[instance[self._feature]].traverse(instance)
         except KeyError:  # Happens when _edges doesn't have instance[self._feature] as an edge.
             return self._default
+
+    def get_children(self):
+        """Returns this FeatureNode's children, so the values of _edges."""
+        return self._edges.values()
+
+    def get_marked(self):
+        """Getter method that gets _marked."""
+        return self._marked
+
+    def set_marked(self, marked):
+        self._marked = marked
 
     def __repr__(self):
         """
         Pretty crappy implementation. Just quick and dirty level order traverse with a queue.
         This should be refactored but probably won't be.
         """
+        if self._marked:
+            return self._feature
         ret = ""
         queue = [self]
         cur_level = []
@@ -106,13 +138,11 @@ class FeatureNode(BaseNode):
             cur_level.append(queue[0].get_data())
             node = queue.pop(0)
             level_count -= 1
-            try:
+            if node.get_children() and not node._marked:
                 for val, branch in node._edges.items():
                     queue.append(branch)
                     cur_edges.append("({}, {})".format(val, branch.get_data()))
                     next_level_count += 1
-            except AttributeError:
-                pass
             if not level_count:
                 ret = ''.join([ret, " ".join(map(str, cur_level)), "\n", " ".join(map(str, cur_edges)), "\n"])
                 level_count = next_level_count
@@ -136,6 +166,10 @@ class LabelNode(BaseNode):
     def traverse(self, instance):
         """Since LabelNodes are leaf nodes, they represent the final classification. Hence, just returns _label."""
         return self._label
+
+    def get_children(self):
+        """Since LabelNodes are leaf nodes, they represent the final classification. Hence, just returns None."""
+        return None
 
     def __repr__(self):
         """Since LabelNodes are leaf nodes, they represent the final classification. Hence, just returns _label."""
