@@ -1,5 +1,6 @@
 from math import log2
 from abc import ABC, abstractmethod
+from enum import Enum
 
 
 def id3(examples):
@@ -48,6 +49,8 @@ def _calc_entropy(classification_counts):
 class BaseNode(ABC):
     """The node all others are derived from."""
 
+    NodeTypes = Enum('NodeTypes', 'feature label')
+
     @abstractmethod
     def get_data(self):
         """Returns the main data info in the node."""
@@ -58,14 +61,11 @@ class BaseNode(ABC):
         """Traverses the node."""
         pass
 
-    @abstractmethod
-    def get_children(self):
-        """Returns a list of the node's children."""
-        pass
-
 
 class FeatureNode(BaseNode):
     """A feature in the decision tree."""
+
+    node_type = BaseNode.NodeTypes.feature
 
     def __init__(self, feature):
         """
@@ -138,7 +138,7 @@ class FeatureNode(BaseNode):
             cur_level.append(queue[0].get_data())
             node = queue.pop(0)
             level_count -= 1
-            if node.get_children() and not node._marked:
+            if node.node_type == BaseNode.NodeTypes.feature and not node._marked:
                 for val, branch in node._edges.items():
                     queue.append(branch)
                     cur_edges.append("({}, {})".format(val, branch.get_data()))
@@ -155,6 +155,8 @@ class FeatureNode(BaseNode):
 class LabelNode(BaseNode):
     """A label in the decision tree."""
 
+    node_type = BaseNode.NodeTypes.label
+
     def __init__(self, label):
         """_label is the label this LabelNode represents."""
         self._label = label
@@ -167,9 +169,6 @@ class LabelNode(BaseNode):
         """Since LabelNodes are leaf nodes, they represent the final classification. Hence, just returns _label."""
         return self._label
 
-    def get_children(self):
-        """Since LabelNodes are leaf nodes, they represent the final classification. Hence, just returns None."""
-        return None
 
     def __repr__(self):
         """Since LabelNodes are leaf nodes, they represent the final classification. Hence, just returns _label."""
