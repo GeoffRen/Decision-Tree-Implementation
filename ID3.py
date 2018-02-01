@@ -6,9 +6,9 @@ from enum import Enum
 def id3(examples):
     """Creates a decision tree using the ID3 algorithm."""
     labels = examples.iloc[:, examples.shape[1] - 1]
-    if examples.shape[1] == 1:
+    if examples.shape[1] == 1:  # No features left aside for the label.
         return LabelNode(labels.value_counts().index[0])
-    elif len(labels.unique()) == 1:
+    elif len(labels.unique()) == 1:  # All labels in the data set are the same.
         return LabelNode(labels.iloc[0])
     else:
         best_feature = _get_best_feature(examples)
@@ -49,6 +49,7 @@ def _calc_entropy(classification_counts):
 class BaseNode(ABC):
     """The node all others are derived from."""
 
+    # The different types of nodes. Used as an identifier to distinguish nodes.
     NodeTypes = Enum('NodeTypes', 'feature label')
 
     @abstractmethod
@@ -87,13 +88,6 @@ class FeatureNode(BaseNode):
     def add_edge(self, val, node):
         """Adds an edge from val to node in _edges."""
         self._edges[val] = node
-
-    def prune_node(self, old_node):
-        """Prune a FeatureNode by turning it into a LabelNode with the _default as the label."""
-        self._edges = {val:LabelNode(old_node.get_default()) for val, node in self._edges.items()}
-        # for val, node in self._edges.items():
-        #     if node is old_node:
-        #         self._edges[val] = LabelNode(old_node.get_default())
 
     def get_data(self):
         """Getter method that gets _feature."""
@@ -168,7 +162,6 @@ class LabelNode(BaseNode):
     def traverse(self, instance):
         """Since LabelNodes are leaf nodes, they represent the final classification. Hence, just returns _label."""
         return self._label
-
 
     def __repr__(self):
         """Since LabelNodes are leaf nodes, they represent the final classification. Hence, just returns _label."""

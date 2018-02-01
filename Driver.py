@@ -123,6 +123,7 @@ def _calc_error(data_set_range, decision_tree, data):
 def _is_correct_label(decision_tree, data, instance_idx):
     return decision_tree.traverse(data.iloc[instance_idx]) == data.iloc[instance_idx, data.shape[1] - 1]
 
+
 print("Part 1 creates a decision tree on the tennis example.")
 print("It then displays the created tree and shows that the examples were classified accurately.")
 input("Press the 'Enter' key to proceed to part 1")
